@@ -1,19 +1,24 @@
 # RomanNepaliAI
 
-A small project to explore AI and language tooling for Romanized Nepali text (working title). The repository was empty; a minimal Python package skeleton has been bootstrapped to get started.
+A small project to translate Nepali (Devanagari) to English for subtitles and general text. The goal is to support translating songs, skits, movies, and other content to help non-Nepali speakers understand the material.
+
+This commit bootstraps a minimal Python package and a pluggable translation CLI.
 
 What was added:
-- src/roman_nepali_ai: package with a transliteration stub and CLI
-- tests/: basic pytest verifying the transliteration stub
+- src/roman_nepali_ai: package with a translation wrapper and CLI
+- tests/: basic pytest verifying the stub translation behavior
+- requirements.txt: optional deps for the Hugging Face backend
 - .gitignore
 
-Next steps (pick one):
-- Implement a real transliteration algorithm (rule-based or ML)
-- Add a small model or use an external API for Nepali NLP tasks
-- Add examples, datasets, and CI to run tests
+Usage:
+- Stub (no dependencies):
+  python -m roman_nepali_ai.cli "नेपाल"
+  (returns input unchanged)
 
-How to run the basic stub locally:
-- Run the CLI: python -m roman_nepali_ai.cli "namaste"
-- Run tests: pytest
+- Hugging Face backend (optional, better quality):
+  1) Install dependencies: pip install -r requirements.txt
+  2) Run: python -m roman_nepali_ai.cli "नेपाल" --backend hf --model Helsinki-NLP/opus-mt-ne-en
 
-If unsure, leave a short note describing the intended core feature and the preferred language/runtime and work will continue autonomously.
+Notes:
+- If the HF backend is selected but transformers or the model are not available, the CLI prints an error and returns the input unchanged.
+- Next work: implement subtitle pipeline (batch processing, SRT generation, time alignment), improve normalization for songs (line breaks, punctuation), and add CI.
