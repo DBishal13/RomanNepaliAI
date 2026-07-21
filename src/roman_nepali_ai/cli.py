@@ -4,7 +4,7 @@ import argparse
 from .translate import Translator
 from .subtitles import translate_srt
 
-ndef main():
+def main():
     parser = argparse.ArgumentParser(description="RomanNepaliAI translation CLI")
     parser.add_argument("text", nargs='?', help="Text to translate (Nepali). Omit when using --srt")
     parser.add_argument("--backend", choices=["stub", "hf", "google"], default="stub", help="Backend to use")

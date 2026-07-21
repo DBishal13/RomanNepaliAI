@@ -1,0 +1,11 @@
+
+[dev]
+pytest>=7.0
+pytest-cov
+
+[google]
+googletrans==4.0.0rc1
+
+[hf]
+transformers[sentencepiece]>=4.30
+torch>=1.13
