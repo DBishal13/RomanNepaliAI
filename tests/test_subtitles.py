@@ -28,9 +28,8 @@ yo ramro cha
 
 def test_normalize_wraps_long_lines(tmp_path):
     # create a single caption with a very long line
-    long_text = """1
-00:00:00,000 --> 00:00:05,000
-" + ("word " * 30).strip() + "\n"
+    long_words = " ".join(["word"] * 30)
+    long_text = f"1\n00:00:00,000 --> 00:00:05,000\n{long_words}\n"
     infile = tmp_path / "in2.srt"
     outfile = tmp_path / "out2.srt"
     infile.write_text(long_text, encoding='utf-8')
