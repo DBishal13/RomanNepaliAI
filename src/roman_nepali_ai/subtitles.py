@@ -3,12 +3,15 @@
 Functions:
 - parse_srt(path) -> list of dicts {index, start, end, text}
 - write_srt(captions, path)
-- translate_srt(in_path, out_path, backend='stub', model_name=None)
+- translate_srt(in_path, out_path, backend='stub', model_name=None, normalize=True)
 
 Supports three backends:
 - 'stub' : returns input unchanged
 - 'google' : uses googletrans (if installed)
 - 'hf' : uses the Translator class (Hugging Face Marian) from translate.py
+
+Also provides simple subtitle normalization (line wrapping and optional merging)
+which helps produce readable subtitle lines for translation output.
 """
 from typing import List, Dict, Optional
 import re
@@ -90,7 +93,60 @@ def _translate_texts_google(texts: List[str]) -> List[str]:
     return out
 
 
-def translate_srt(in_path: str, out_path: str, backend: str = 'stub', model_name: Optional[str] = None) -> None:
+# Simple text wrapping utility
+def _wrap_text(text: str, max_width: int = 40) -> str:
+    words = text.split()
+    if not words:
+        return text
+    lines = []
+    cur = words[0]
+    for w in words[1:]:
+        if len(cur) + 1 + len(w) <= max_width:
+            cur = cur + ' ' + w
+        else:
+            lines.append(cur)
+            cur = w
+    lines.append(cur)
+    return '\n'.join(lines)
+
+
+def normalize_subtitles(captions: List[Dict], max_width: int = 40, min_merge_len: int = 20) -> List[Dict]:
+    """Wrap lines to max_width and merge very short adjacent captions.
+
+    This modifies timing of merged captions (start from first, end from last).
+    It returns a new list of captions.
+    """
+    # First wrap each caption's text
+    wrapped = []
+    for c in captions:
+        text = c.get('text', '')
+        # Preserve existing newlines by collapsing then wrapping
+        joined = ' '.join(line.strip() for line in text.splitlines())
+        new_text = _wrap_text(joined, max_width=max_width)
+        new = c.copy()
+        new['text'] = new_text
+        wrapped.append(new)
+
+    # Merge adjacent short captions
+    merged = []
+    for c in wrapped:
+        if merged and len(merged[-1]['text'].replace('\n', ' ')) < min_merge_len:
+            # attempt merge
+            prev = merged[-1]
+            combined_text = prev['text'].replace('\n', ' ') + ' ' + c['text'].replace('\n', ' ')
+            if len(combined_text) <= max_width * 2:
+                # merge into prev
+                prev['text'] = _wrap_text(combined_text, max_width=max_width)
+                prev['end'] = c['end']
+                continue
+        merged.append(c.copy())
+    # Reindex
+    for i, c in enumerate(merged, start=1):
+        c['index'] = i
+    return merged
+
+
+def translate_srt(in_path: str, out_path: str, backend: str = 'stub', model_name: Optional[str] = None, normalize: bool = True) -> None:
     captions = parse_srt(in_path)
     if not captions:
         # write empty file
@@ -117,6 +173,10 @@ def translate_srt(in_path: str, out_path: str, backend: str = 'stub', model_name
         new = c.copy()
         new['text'] = tr
         new_caps.append(new)
+
+    # Optionally normalize (wrap/merge) the translated output
+    if normalize:
+        new_caps = normalize_subtitles(new_caps)
 
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
     write_srt(new_caps, out_path)

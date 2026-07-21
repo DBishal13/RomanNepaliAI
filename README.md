@@ -35,3 +35,7 @@ Subtitle pipeline usage example:
 - Translate with Hugging Face model (optional):
   pip install -r requirements.txt
   python -m roman_nepali_ai.cli --srt-in examples/imported_romanized_nepali/sample.srt --srt-out out.srt --backend hf --model Helsinki-NLP/opus-mt-ne-en
+
+- Subtitle normalization:
+  By default the CLI normalizes translated subtitles (wraps long lines and merges very short captions). Use --no-normalize to disable this behavior:
+  python -m roman_nepali_ai.cli --srt-in in.srt --srt-out out.srt --backend hf --no-normalize

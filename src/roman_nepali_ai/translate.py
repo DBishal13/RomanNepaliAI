@@ -1,11 +1,13 @@
 """Translation helpers for RomanNepaliAI.
 
-Provides a Translator wrapper that supports a stub backend and an optional
-Hugging Face MarianMT backend (Helsinki-NLP/opus-mt-ne-en).
+Provides a Translator wrapper that supports a stub backend, an optional
+Hugging Face MarianMT backend (Helsinki-NLP/opus-mt-ne-en), and a lightweight
+Google Translate adapter (via googletrans) when available.
 
-The HF backend is used only if the `transformers` library is installed and
-the requested model can be downloaded. Otherwise the translator falls back
-to the stub which returns the input unchanged.
+Backends:
+- stub: returns input unchanged
+- hf: uses transformers MarianMT
+- google: uses googletrans Translator (install: pip install googletrans==4.0.0rc1)
 """
 from typing import Optional
 
@@ -28,26 +30,51 @@ class Translator:
                 self.available = False
                 self._load_error = e
 
+        elif self.backend == "google":
+            try:
+                from googletrans import Translator as GT
+                self.gt = GT()
+                self.available = True
+            except Exception as e:
+                self.available = False
+                self._load_error = e
+
     def translate(self, text: str, src: str = "ne", tgt: str = "en") -> str:
         """Translate `text` from Nepali to English.
 
-        If the HF backend is selected but unavailable, an informative exception
-        will be raised. The stub backend returns the input unchanged.
+        If a non-stub backend is selected but unavailable, an informative
+        exception will be raised. The stub backend returns the input unchanged.
         """
         if self.backend == "stub":
             return text
 
-        if not self.available:
-            raise RuntimeError(
-                "Hugging Face backend is unavailable. Install transformers and the model "
-                f"({self.model_name}) or use the stub backend. Original error: {self._load_error}"
-            )
+        if self.backend == "google":
+            if not self.available:
+                raise RuntimeError(
+                    "Google Translate backend unavailable. Install googletrans (pip install googletrans==4.0.0rc1) "
+                    f"or use the stub backend. Original error: {self._load_error}"
+                )
+            try:
+                res = self.gt.translate(text, src=src, dest=tgt)
+                return res.text
+            except Exception as e:
+                # On any error, surface the original text to avoid crashes
+                raise RuntimeError(f"Google Translate failed: {e}")
 
-        # Run translation using MarianMT
-        inputs = self.tokenizer([text], return_tensors="pt", truncation=True, padding=True)
-        translated = self.model.generate(**inputs)
-        out = self.tokenizer.batch_decode(translated, skip_special_tokens=True)[0]
-        return out
+        if self.backend == "hf":
+            if not self.available:
+                raise RuntimeError(
+                    "Hugging Face backend is unavailable. Install transformers and the model "
+                    f"({self.model_name}) or use the stub backend. Original error: {self._load_error}"
+                )
+
+            # Run translation using MarianMT
+            inputs = self.tokenizer([text], return_tensors="pt", truncation=True, padding=True)
+            translated = self.model.generate(**inputs)
+            out = self.tokenizer.batch_decode(translated, skip_special_tokens=True)[0]
+            return out
+
+        raise ValueError(f"Unknown backend: {self.backend}")
 
 
 # Convenience one-shot helper

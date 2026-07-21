@@ -13,6 +13,7 @@ from .subtitles import translate_srt
     parser.add_argument("--srt-out", help="Path to output translated SRT (required if --srt-in is given)")
     parser.add_argument("--batch-in", help="Directory containing SRTs to batch-translate")
     parser.add_argument("--batch-out", help="Destination directory for translated SRTs (required if --batch-in is given)")
+    parser.add_argument("--no-normalize", action="store_true", help="Disable post-translation subtitle normalization (wrapping/merging)")
     args = parser.parse_args()
 
     if args.srt_in:
@@ -20,7 +21,7 @@ from .subtitles import translate_srt
             print("--srt-out is required when --srt-in is provided")
             return
         try:
-            translate_srt(args.srt_in, args.srt_out, backend=args.backend, model_name=args.model)
+            translate_srt(args.srt_in, args.srt_out, backend=args.backend, model_name=args.model, normalize=(not args.no_normalize))
             print(f"Wrote translated SRT to {args.srt_out}")
         except Exception as e:
             print(f"[srt translation error] {e}")
