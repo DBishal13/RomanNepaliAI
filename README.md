@@ -22,3 +22,16 @@ Usage:
 Notes:
 - If the HF backend is selected but transformers or the model are not available, the CLI prints an error and returns the input unchanged.
 - Next work: implement subtitle pipeline (batch processing, SRT generation, time alignment), improve normalization for songs (line breaks, punctuation), and add CI.
+
+Subtitle pipeline usage example:
+
+- Translate an SRT file (stub backend):
+  python -m roman_nepali_ai.cli --srt-in examples/imported_romanized_nepali/sample.srt --srt-out out.srt
+
+- Translate with Google Translate (requires googletrans):
+  pip install googletrans==4.0.0rc1
+  python -m roman_nepali_ai.cli --srt-in examples/imported_romanized_nepali/sample.srt --srt-out out.srt --backend google
+
+- Translate with Hugging Face model (optional):
+  pip install -r requirements.txt
+  python -m roman_nepali_ai.cli --srt-in examples/imported_romanized_nepali/sample.srt --srt-out out.srt --backend hf --model Helsinki-NLP/opus-mt-ne-en
