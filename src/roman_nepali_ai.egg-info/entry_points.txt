@@ -1,2 +1,0 @@
-[console_scripts]
-roman-nepali-ai = roman_nepali_ai.cli:main

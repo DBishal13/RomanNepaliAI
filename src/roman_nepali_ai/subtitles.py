@@ -3,7 +3,7 @@
 Functions:
 - parse_srt(path) -> list of dicts {index, start, end, text}
 - write_srt(captions, path)
-- translate_srt(in_path, out_path, backend='stub', model_name=None, normalize=True)
+- translate_srt(in_path, out_path, backend='stub', model_name=None, normalize=True, src='ne', tgt='en')
 
 Supports three backends:
 - 'stub' : returns input unchanged
@@ -77,12 +77,12 @@ def write_srt(captions: List[Dict], path: str) -> None:
             f.write(f"{c['text']}\n\n")
 
 
-def _translate_texts_google(texts: List[str]) -> List[str]:
+def _translate_texts_google(texts: List[str], src: str = 'ne', tgt: str = 'en') -> List[str]:
     try:
         from deep_translator import GoogleTranslator
     except Exception:
         raise RuntimeError("deep-translator is not available. Install with: pip install deep-translator")
-    t = GoogleTranslator(source='ne', target='en')
+    t = GoogleTranslator(source=src, target=tgt)
     out = []
     for txt in texts:
         try:
@@ -145,7 +145,8 @@ def normalize_subtitles(captions: List[Dict], max_width: int = 40, min_merge_len
     return merged
 
 
-def translate_srt(in_path: str, out_path: str, backend: str = 'stub', model_name: Optional[str] = None, normalize: bool = True) -> None:
+def translate_srt(in_path: str, out_path: str, backend: str = 'stub', model_name: Optional[str] = None,
+                   normalize: bool = True, src: str = 'ne', tgt: str = 'en') -> None:
     captions = parse_srt(in_path)
     if not captions:
         # write empty file
@@ -157,12 +158,12 @@ def translate_srt(in_path: str, out_path: str, backend: str = 'stub', model_name
     if backend == 'stub':
         translated = texts
     elif backend == 'google':
-        translated = _translate_texts_google(texts)
+        translated = _translate_texts_google(texts, src=src, tgt=tgt)
     elif backend == 'hf':
         t = Translator(backend='hf', model_name=model_name)
         if not t.available:
             raise RuntimeError(f"HF backend unavailable: {t._load_error}")
-        translated = [t.translate(t_txt) for t_txt in texts]
+        translated = [t.translate(t_txt, src=src, tgt=tgt) for t_txt in texts]
     else:
         raise ValueError('Unknown backend')
 

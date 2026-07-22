@@ -13,6 +13,12 @@ from typing import Optional
 
 
 class Translator:
+    # The hf backend loads one fixed MarianMT model at init time, so it can
+    # only ever support this one direction regardless of what src/tgt a
+    # caller passes to translate().
+    HF_SRC = "ne"
+    HF_TGT = "en"
+
     def __init__(self, backend: str = "stub", model_name: Optional[str] = None):
         self.backend = backend
         self.model_name = model_name or "Helsinki-NLP/opus-mt-ne-en"
@@ -40,10 +46,15 @@ class Translator:
                 self._load_error = e
 
     def translate(self, text: str, src: str = "ne", tgt: str = "en") -> str:
-        """Translate `text` from Nepali to English.
+        """Translate `text` from language `src` to language `tgt`.
+
+        The google backend supports arbitrary src/tgt (e.g. "en"->"ne" as well
+        as "ne"->"en"). The hf backend only supports "ne"->"en" (its one fixed
+        loaded model) and raises if asked for anything else. The stub backend
+        ignores src/tgt and returns the input unchanged.
 
         If a non-stub backend is selected but unavailable, an informative
-        exception will be raised. The stub backend returns the input unchanged.
+        exception will be raised.
         """
         if self.backend == "stub":
             return text
@@ -65,6 +76,12 @@ class Translator:
                     "Hugging Face backend is unavailable. Install transformers and the model "
                     f"({self.model_name}) or use the stub backend. Original error: {self._load_error}"
                 )
+            if (src, tgt) != (self.HF_SRC, self.HF_TGT):
+                raise RuntimeError(
+                    f"hf backend only supports {self.HF_SRC}->{self.HF_TGT} translation "
+                    f"(got src={src!r}, tgt={tgt!r}). Use backend='google' for the other "
+                    "direction, or backend='stub' for a no-op passthrough."
+                )
 
             # Run translation using MarianMT
             inputs = self.tokenizer([text], return_tensors="pt", truncation=True, padding=True)
@@ -76,6 +93,7 @@ class Translator:
 
 
 # Convenience one-shot helper
-def translate_text(text: str, backend: str = "stub", model_name: Optional[str] = None) -> str:
+def translate_text(text: str, backend: str = "stub", model_name: Optional[str] = None,
+                    src: str = "ne", tgt: str = "en") -> str:
     t = Translator(backend=backend, model_name=model_name)
-    return t.translate(text)
+    return t.translate(text, src=src, tgt=tgt)

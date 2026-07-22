@@ -14,7 +14,7 @@ dependencies = []
 hf = ["transformers[sentencepiece]>=4.30", "torch>=1.13"]
 google = ["deep-translator>=1.11"]
 server = ["fastapi>=0.100", "uvicorn>=0.23", "deep-translator>=1.11"]
-dev = ["pytest>=7.0", "pytest-cov"]
+dev = ["pytest>=7.0", "pytest-cov", "httpx>=0.24"]
 
 [project.scripts]
 roman-nepali-ai = "roman_nepali_ai.cli:main"
