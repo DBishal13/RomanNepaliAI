@@ -30,6 +30,7 @@
       <textarea id="input" placeholder="e.g. malai tha xaina" autofocus></textarea>
       <button type="button" class="icon-btn" id="mic-input" title="Speak (Nepali)" aria-label="Speak Nepali" hidden>🎤</button>
     </div>
+    <p class="mode-hint" id="mic-status" style="display:none;margin:0.4rem 0 0"></p>
 
     <div class="examples" id="examples"></div>
 
@@ -63,6 +64,7 @@
       <textarea id="en-input" placeholder="e.g. My name is Bishal"></textarea>
       <button type="button" class="icon-btn" id="mic-en-input" title="Speak (English)" aria-label="Speak English" hidden>🎤</button>
     </div>
+    <p class="mode-hint" id="mic-en-status" style="display:none;margin:0.4rem 0 0.8rem"></p>
 
     <div class="api-row">
       <button type="button" id="translate-btn" style="width:100%">Translate</button>
@@ -100,6 +102,18 @@
   const micEnInputBtn = document.getElementById("mic-en-input");
   const speakOutputBtn = document.getElementById("speak-output");
   const speakTranslationBtn = document.getElementById("speak-translation");
+  const micStatus = document.getElementById("mic-status");
+  const micEnStatus = document.getElementById("mic-en-status");
+
+  const MIC_ERROR_MESSAGES = {
+    "not-allowed": "Microphone permission denied (or blocked by your browser). Check the site permissions and try again.",
+    "service-not-allowed": "Speech recognition was blocked by the browser or an extension.",
+    "audio-capture": "No microphone found. Check your device's mic settings.",
+    "network": "Network error reaching the speech recognition service (it needs an internet connection).",
+    "no-speech": "Didn't catch any speech — try again.",
+    "aborted": "Recording stopped.",
+    "language-not-supported": "This browser doesn't support Nepali/English speech recognition.",
+  };
 
   const DIRECTION_HINTS = {
     "ne-en": "Sends the Devanagari transliteration above to the backend.",
@@ -232,16 +246,24 @@
   let lastTranslationText = "";
   let lastTranslationLang = "en-US";
 
-  function wireMic(button, targetTextarea, lang, onFilled) {
+  function wireMic(button, targetTextarea, lang, statusEl, onFilled) {
     if (!supportsSTT) return;
     button.hidden = false;
     let recognition = null;
     let listening = false;
+
+    function showStatus(msg) {
+      if (!statusEl) return;
+      statusEl.textContent = msg;
+      statusEl.style.display = msg ? "" : "none";
+    }
+
     button.addEventListener("click", () => {
       if (listening) {
         if (recognition) recognition.stop();
         return;
       }
+      showStatus("");
       recognition = new SpeechRecognitionCtor();
       recognition.lang = lang;
       recognition.interimResults = false;
@@ -250,9 +272,10 @@
         listening = true;
         button.classList.add("recording");
       };
-      recognition.onerror = () => {
+      recognition.onerror = (event) => {
         listening = false;
         button.classList.remove("recording");
+        showStatus(MIC_ERROR_MESSAGES[event.error] || `Speech recognition error: ${event.error}`);
       };
       recognition.onend = () => {
         listening = false;
@@ -267,6 +290,7 @@
         recognition.start();
       } catch (err) {
         button.classList.remove("recording");
+        showStatus(`Couldn't start recording: ${err.message}`);
       }
     });
   }
@@ -282,8 +306,8 @@
   // Speaking Nepali fills in Devanagari directly (the browser transcribes
   // actual Nepali script, not a romanization) -- it flows into the same
   // render() path as typed text and displays as-is either way.
-  wireMic(micInputBtn, input, "ne-NP");
-  wireMic(micEnInputBtn, enInput, "en-US");
+  wireMic(micInputBtn, input, "ne-NP", micStatus);
+  wireMic(micEnInputBtn, enInput, "en-US", micEnStatus);
 
   if (supportsTTS) {
     speakOutputBtn.hidden = false;
