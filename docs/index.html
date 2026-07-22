@@ -14,7 +14,7 @@
 <main>
   <header>
     <h1>RomanNepaliAI</h1>
-    <p>Type romanized Nepali below and see it transliterated to Devanagari live, entirely in your browser (no server, no data leaves your machine). This is the same engine used by the <code>--transliterate</code> flag in the CLI. English translation below is optional and calls a small backend.</p>
+    <p>Type romanized Nepali below and see it transliterated to Devanagari live, entirely in your browser (no server, no data leaves your machine). This is the same engine used by the <code>--transliterate</code> flag in the CLI. English translation below is optional and calls a small backend. Mic (🎤) and speaker (🔊) buttons use your browser's built-in speech support when available &mdash; support and Nepali voice quality vary by browser/device.</p>
   </header>
 
   <section class="card">
@@ -26,11 +26,17 @@
     </div>
     <p class="mode-hint" id="mode-hint"></p>
 
-    <textarea id="input" placeholder="e.g. malai tha xaina" autofocus></textarea>
+    <div class="field-wrap">
+      <textarea id="input" placeholder="e.g. malai tha xaina" autofocus></textarea>
+      <button type="button" class="icon-btn" id="mic-input" title="Speak (Nepali)" aria-label="Speak Nepali" hidden>🎤</button>
+    </div>
 
     <div class="examples" id="examples"></div>
 
-    <div class="output-label">Devanagari</div>
+    <div class="output-label-row">
+      <div class="output-label">Devanagari</div>
+      <button type="button" class="icon-btn" id="speak-output" title="Listen" aria-label="Listen to Devanagari output" hidden>🔊</button>
+    </div>
     <div class="output" id="output" lang="ne"></div>
   </section>
 
@@ -53,12 +59,20 @@
 
     <p class="mode-hint" id="direction-hint" style="margin-bottom:0.8rem"></p>
 
-    <textarea id="en-input" placeholder="e.g. My name is Bishal" style="display:none"></textarea>
+    <div class="field-wrap" id="en-input-wrap" style="display:none">
+      <textarea id="en-input" placeholder="e.g. My name is Bishal"></textarea>
+      <button type="button" class="icon-btn" id="mic-en-input" title="Speak (English)" aria-label="Speak English" hidden>🎤</button>
+    </div>
 
     <div class="api-row">
       <button type="button" id="translate-btn" style="width:100%">Translate</button>
     </div>
-    <div class="output" id="translation-output" style="margin-top:0.9rem"></div>
+
+    <div class="output-label-row" style="margin-top:1.25rem">
+      <div class="output-label" style="margin:0">Result</div>
+      <button type="button" class="icon-btn" id="speak-translation" title="Listen" aria-label="Listen to translation" hidden>🔊</button>
+    </div>
+    <div class="output" id="translation-output"></div>
   </section>
 
   <footer>
@@ -79,8 +93,13 @@
   const translateBtn = document.getElementById("translate-btn");
   const translationOutput = document.getElementById("translation-output");
   const enInput = document.getElementById("en-input");
+  const enInputWrap = document.getElementById("en-input-wrap");
   const directionHint = document.getElementById("direction-hint");
   const directionInputs = document.querySelectorAll('input[name="direction"]');
+  const micInputBtn = document.getElementById("mic-input");
+  const micEnInputBtn = document.getElementById("mic-en-input");
+  const speakOutputBtn = document.getElementById("speak-output");
+  const speakTranslationBtn = document.getElementById("speak-translation");
 
   const DIRECTION_HINTS = {
     "ne-en": "Sends the Devanagari transliteration above to the backend.",
@@ -141,9 +160,12 @@
 
   function updateDirectionUI() {
     const direction = currentDirection();
-    enInput.style.display = direction === "en-ne" ? "" : "none";
+    const showEn = direction === "en-ne";
+    enInputWrap.style.display = showEn ? "" : "none";
+    micEnInputBtn.hidden = !(showEn && supportsSTT);
     directionHint.textContent = DIRECTION_HINTS[direction];
     translationOutput.textContent = "";
+    speakTranslationBtn.hidden = true;
   }
 
   for (const el of directionInputs) el.addEventListener("change", updateDirectionUI);
@@ -186,17 +208,88 @@
           romanLine.textContent = window.RomanNepaliAI.devanagariToRoman(data.translation);
           translationOutput.appendChild(romanLine);
         }
+        lastTranslationText = data.translation;
+        lastTranslationLang = tgt === "ne" ? "ne-NP" : "en-US";
+        speakTranslationBtn.hidden = !supportsTTS;
       } else {
         translationOutput.textContent = "(empty response)";
+        speakTranslationBtn.hidden = true;
       }
     } catch (err) {
       translationOutput.textContent = `Couldn't reach the backend: ${err.message}`;
+      speakTranslationBtn.hidden = true;
     } finally {
       translateBtn.disabled = false;
     }
   }
 
   translateBtn.addEventListener("click", translate);
+
+  // --- voice (Web Speech API, entirely client-side; support varies by browser) ---
+  const SpeechRecognitionCtor = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const supportsSTT = !!SpeechRecognitionCtor;
+  const supportsTTS = "speechSynthesis" in window;
+  let lastTranslationText = "";
+  let lastTranslationLang = "en-US";
+
+  function wireMic(button, targetTextarea, lang, onFilled) {
+    if (!supportsSTT) return;
+    button.hidden = false;
+    let recognition = null;
+    let listening = false;
+    button.addEventListener("click", () => {
+      if (listening) {
+        if (recognition) recognition.stop();
+        return;
+      }
+      recognition = new SpeechRecognitionCtor();
+      recognition.lang = lang;
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+      recognition.onstart = () => {
+        listening = true;
+        button.classList.add("recording");
+      };
+      recognition.onerror = () => {
+        listening = false;
+        button.classList.remove("recording");
+      };
+      recognition.onend = () => {
+        listening = false;
+        button.classList.remove("recording");
+      };
+      recognition.onresult = (event) => {
+        targetTextarea.value = event.results[0][0].transcript;
+        targetTextarea.dispatchEvent(new Event("input"));
+        if (onFilled) onFilled();
+      };
+      try {
+        recognition.start();
+      } catch (err) {
+        button.classList.remove("recording");
+      }
+    });
+  }
+
+  function speak(text, lang) {
+    if (!supportsTTS || !text) return;
+    window.speechSynthesis.cancel();
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.lang = lang;
+    window.speechSynthesis.speak(utter);
+  }
+
+  // Speaking Nepali fills in Devanagari directly (the browser transcribes
+  // actual Nepali script, not a romanization) -- it flows into the same
+  // render() path as typed text and displays as-is either way.
+  wireMic(micInputBtn, input, "ne-NP");
+  wireMic(micEnInputBtn, enInput, "en-US");
+
+  if (supportsTTS) {
+    speakOutputBtn.hidden = false;
+    speakOutputBtn.addEventListener("click", () => speak(output.textContent, "ne-NP"));
+    speakTranslationBtn.addEventListener("click", () => speak(lastTranslationText, lastTranslationLang));
+  }
 
   updateDirectionUI();
   render();
