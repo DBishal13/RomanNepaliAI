@@ -14,7 +14,7 @@
 <main>
   <header>
     <h1>RomanNepaliAI</h1>
-    <p>Type romanized Nepali below and see it transliterated to Devanagari live, entirely in your browser (no server, no data leaves your machine). This is the same engine used by the <code>--transliterate</code> flag in the CLI.</p>
+    <p>Type romanized Nepali below and see it transliterated to Devanagari live, entirely in your browser (no server, no data leaves your machine). This is the same engine used by the <code>--transliterate</code> flag in the CLI. English translation below is optional and calls a small backend.</p>
   </header>
 
   <section class="card">
@@ -34,8 +34,22 @@
     <div class="output" id="output" lang="ne"></div>
   </section>
 
+  <section class="card">
+    <div class="output-label" style="margin-top:0">English translation (optional, needs a backend)</div>
+    <p class="mode-hint" style="margin-bottom:0.8rem">
+      Transliteration above runs locally. Real translation calls a small server running the
+      project's Google-Translate-backed <code>Translator</code> &mdash; enter its URL once and it's
+      remembered in this browser. Leave blank to skip.
+    </p>
+    <div class="api-row">
+      <input type="text" id="api-url" placeholder="https://your-backend.example.com" spellcheck="false">
+      <button type="button" id="translate-btn">Translate</button>
+    </div>
+    <div class="output" id="translation-output" style="margin-top:0.9rem"></div>
+  </section>
+
   <footer>
-    Rule-based &amp; dictionary-assisted, not a language model &mdash; expect rough edges on words outside the built-in dictionary.
+    Transliteration is rule-based &amp; dictionary-assisted, not a language model &mdash; expect rough edges on words outside the built-in dictionary.
     <br>
     <a href="https://github.com/DBishal13/RomanNepaliAI">Source on GitHub</a>
   </footer>
@@ -48,6 +62,9 @@
   const modeHint = document.getElementById("mode-hint");
   const examplesEl = document.getElementById("examples");
   const modeInputs = document.querySelectorAll('input[name="mode"]');
+  const apiUrlInput = document.getElementById("api-url");
+  const translateBtn = document.getElementById("translate-btn");
+  const translationOutput = document.getElementById("translation-output");
 
   const HINTS = {
     casual: "Dictionary-assisted for free-typed texting-style Nepali (e.g. “malai tha xaina”). Case-insensitive; known English loanwords are left alone.",
@@ -60,13 +77,14 @@
     return document.getElementById("mode-formal").checked ? "formal" : "casual";
   }
 
-  function render() {
-    const mode = currentMode();
-    modeHint.textContent = HINTS[mode];
+  function currentDevanagari() {
     const text = input.value;
-    output.textContent = text
-      ? window.RomanNepaliAI.romanToDevanagari(text, mode === "casual")
-      : "";
+    return text ? window.RomanNepaliAI.romanToDevanagari(text, currentMode() === "casual") : "";
+  }
+
+  function render() {
+    modeHint.textContent = HINTS[currentMode()];
+    output.textContent = currentDevanagari();
   }
 
   for (const el of modeInputs) el.addEventListener("change", render);
@@ -83,6 +101,44 @@
     });
     examplesEl.appendChild(btn);
   }
+
+  // --- translation backend (optional) ---
+  const API_URL_KEY = "romanNepaliAI.apiUrl";
+  apiUrlInput.value = localStorage.getItem(API_URL_KEY) || "";
+  apiUrlInput.addEventListener("change", () => {
+    localStorage.setItem(API_URL_KEY, apiUrlInput.value.trim());
+  });
+
+  async function translate() {
+    const apiUrl = apiUrlInput.value.trim().replace(/\/+$/, "");
+    const deva = currentDevanagari();
+    if (!apiUrl) {
+      translationOutput.textContent = "Enter a backend URL above first.";
+      return;
+    }
+    if (!deva) {
+      translationOutput.textContent = "Type something to transliterate first.";
+      return;
+    }
+    translationOutput.textContent = "Translating…";
+    translateBtn.disabled = true;
+    try {
+      const res = await fetch(`${apiUrl}/translate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: deva, backend: "google" }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      translationOutput.textContent = data.translation || "(empty response)";
+    } catch (err) {
+      translationOutput.textContent = `Couldn't reach the backend: ${err.message}`;
+    } finally {
+      translateBtn.disabled = false;
+    }
+  }
+
+  translateBtn.addEventListener("click", translate);
 
   render();
 </script>
