@@ -3,6 +3,20 @@
 import argparse
 from .translate import Translator
 from .subtitles import translate_srt
+from .transliterate import roman_to_devanagari
+
+def _run_transliterate_repl(casual: bool):
+    mode = "casual" if casual else "formal"
+    print(f"RomanNepaliAI transliteration REPL ({mode} mode). Type romanized Nepali, Ctrl-D to exit.")
+    while True:
+        try:
+            line = input("> ")
+        except (EOFError, KeyboardInterrupt):
+            print()
+            break
+        if not line:
+            continue
+        print(roman_to_devanagari(line, casual=casual))
 
 def main():
     parser = argparse.ArgumentParser(description="RomanNepaliAI translation CLI")
@@ -14,7 +28,16 @@ def main():
     parser.add_argument("--batch-in", help="Directory containing SRTs to batch-translate")
     parser.add_argument("--batch-out", help="Destination directory for translated SRTs (required if --batch-in is given)")
     parser.add_argument("--no-normalize", action="store_true", help="Disable post-translation subtitle normalization (wrapping/merging)")
+    parser.add_argument("--transliterate", action="store_true", help="Transliterate romanized Nepali to Devanagari instead of translating. Omit `text` to start an interactive REPL")
+    parser.add_argument("--casual", action="store_true", help="Use casual-text transliteration mode (dictionary + loanword-aware) instead of the strict formal scheme")
     args = parser.parse_args()
+
+    if args.transliterate:
+        if args.text:
+            print(roman_to_devanagari(args.text, casual=args.casual))
+        else:
+            _run_transliterate_repl(casual=args.casual)
+        return
 
     if args.srt_in:
         if not args.srt_out:
