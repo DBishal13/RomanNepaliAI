@@ -104,7 +104,8 @@
 
   // --- translation backend (optional) ---
   const API_URL_KEY = "romanNepaliAI.apiUrl";
-  apiUrlInput.value = localStorage.getItem(API_URL_KEY) || "";
+  const DEFAULT_API_URL = "https://romannepaliai.onrender.com";
+  apiUrlInput.value = localStorage.getItem(API_URL_KEY) || DEFAULT_API_URL;
   apiUrlInput.addEventListener("change", () => {
     localStorage.setItem(API_URL_KEY, apiUrlInput.value.trim());
   });
