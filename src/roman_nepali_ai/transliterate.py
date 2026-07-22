@@ -87,12 +87,15 @@ for _roman, _dev in _SPECIALS.items():
 _TOKENS.sort(key=lambda t: -len(t[0]))
 
 # Case-insensitive token table used by casual mode's fallback path: lowercased
-# roman spelling -> the first (formal-mode) token that lowercases to it, so
-# e.g. both "t" and (a stray) "T" resolve to the same dental/retroflex choice
-# consistently by picking whichever was declared first in _CONSONANTS/_VOWELS.
+# roman spelling -> the token that lowercases to it. When both a dental and a
+# retroflex spelling collapse to the same lowercase key (e.g. "t" and "T"),
+# prefer the dental one -- it's the overwhelmingly common case in casual
+# romanized Nepali, and retroflex marking requires a deliberate capital that
+# casual mode explicitly doesn't trust. Already-lowercase tokens are tried
+# before ones that needed lowercasing, so e.g. "t" wins over "T".
 _TOKENS_CI: List[Tuple[str, str, object]] = []
 _seen_ci: Dict[str, bool] = {}
-for _roman, _kind, _val in _TOKENS:
+for _roman, _kind, _val in sorted(_TOKENS, key=lambda t: t[0] != t[0].lower()):
     _lroman = _roman.lower()
     if _lroman not in _seen_ci:
         _seen_ci[_lroman] = True
@@ -142,6 +145,7 @@ _COMMON_WORDS: Dict[str, str] = {
     "pani": "पनि", "paani": "पानी", "ali": "अलि", "dherai": "धेरै",
     "ghumna": "घुम्न", "sathi": "साथी", "vayo": "भयो", "bhayo": "भयो",
     "sanchai": "सन्चै", "dhanyabad": "धन्यवाद", "maaf": "माफ",
+    "naam": "नाम", "mero": "मेरो", "ho": "हो", "timro": "तिम्रो", "hamro": "हाम्रो",
 }
 
 # English loanwords commonly code-switched into Nepali sentences: left in
