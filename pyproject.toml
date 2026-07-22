@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=65", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "roman-nepali-ai"
+version = "0.0.1"
+description = "Nepali to English translation for subtitles and text"
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = []
+
+[project.optional-dependencies]
+hf = ["transformers[sentencepiece]>=4.30", "torch>=1.13"]
+google = ["deep-translator>=1.11"]
+server = ["fastapi>=0.100", "uvicorn>=0.23", "deep-translator>=1.11"]
+dev = ["pytest>=7.0", "pytest-cov", "httpx>=0.24"]
+
+[project.scripts]
+roman-nepali-ai = "roman_nepali_ai.cli:main"
+
+[tool.setuptools]
+packages = ["roman_nepali_ai"]
+package-dir = { "" = "src" }

@@ -1,0 +1,210 @@
+:root {
+  color-scheme: light dark;
+  --bg: #faf8f5;
+  --fg: #2b2420;
+  --muted: #756a5f;
+  --card: #ffffff;
+  --border: #e6dfd6;
+  --accent: #b5502f;
+  --accent-fg: #ffffff;
+  --mono-bg: #f2ece3;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1a1714;
+    --fg: #f1ebe3;
+    --muted: #a89a8b;
+    --card: #241f1b;
+    --border: #3a332c;
+    --accent: #e08a5f;
+    --accent-fg: #1a1714;
+    --mono-bg: #2c2620;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  display: flex;
+  justify-content: center;
+  padding: 2.5rem 1.25rem 4rem;
+}
+
+main {
+  width: 100%;
+  max-width: 640px;
+}
+
+header {
+  margin-bottom: 1.75rem;
+}
+
+h1 {
+  font-size: 1.5rem;
+  margin: 0 0 0.35rem;
+}
+
+header p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 1.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.mode-toggle {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 3px;
+  margin-bottom: 1.1rem;
+  gap: 2px;
+}
+
+.mode-toggle input { display: none; }
+
+.mode-toggle label {
+  padding: 0.4rem 0.9rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  color: var(--muted);
+  user-select: none;
+}
+
+.mode-toggle input:checked + label {
+  background: var(--accent);
+  color: var(--accent-fg);
+}
+
+.mode-hint {
+  font-size: 0.82rem;
+  color: var(--muted);
+  margin: -0.6rem 0 1.1rem;
+  line-height: 1.5;
+}
+
+textarea {
+  width: 100%;
+  min-height: 110px;
+  resize: vertical;
+  padding: 0.85rem 1rem;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--mono-bg);
+  color: var(--fg);
+  font-size: 1.05rem;
+  font-family: inherit;
+  line-height: 1.5;
+}
+
+textarea:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+}
+
+.output-label {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  margin: 1.25rem 0 0.5rem;
+}
+
+.api-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.api-row input {
+  flex: 1;
+  min-width: 0;
+  padding: 0.6rem 0.85rem;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--mono-bg);
+  color: var(--fg);
+  font-size: 0.92rem;
+  font-family: inherit;
+}
+
+.api-row input:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+}
+
+.api-row button {
+  border: none;
+  background: var(--accent);
+  color: var(--accent-fg);
+  border-radius: 10px;
+  padding: 0.6rem 1.1rem;
+  font-size: 0.92rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.api-row button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.output {
+  min-height: 3.2rem;
+  padding: 0.85rem 1rem;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--mono-bg);
+  font-family: "Noto Sans Devanagari", "Nirmala UI", sans-serif;
+  font-size: 1.4rem;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.examples {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.examples button {
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--fg);
+  border-radius: 999px;
+  padding: 0.35rem 0.8rem;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.examples button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+footer {
+  color: var(--muted);
+  font-size: 0.82rem;
+  text-align: center;
+  line-height: 1.6;
+}
+
+footer a {
+  color: inherit;
+}

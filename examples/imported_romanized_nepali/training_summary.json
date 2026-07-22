@@ -1,0 +1,19 @@
+{
+  "training_completed": true,
+  "dataset_size": 51,
+  "model_architecture": "t5-small",
+  "training_epochs": 10,
+  "best_loss": 0.9178107134424723,
+  "success_rate": "100.0%",
+  "recommendations": [
+    "Expand dataset to 500+ examples",
+    "Use larger model (T5-base)",
+    "Implement proper evaluation",
+    "Add more training epochs"
+  ],
+  "files_created": [
+    "./romanized_nepali_to_english_model/",
+    "./romanized_nepali_to_english_model_v2/",
+    "./scraped_data/comprehensive_romanized_nepali_dataset.csv"
+  ]
+}

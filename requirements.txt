@@ -1,0 +1,3 @@
+# Optional runtime dependencies for using the Hugging Face backend
+transformers[sentencepiece]
+torch>=1.13

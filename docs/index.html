@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RomanNepaliAI &mdash; Transliteration Demo</title>
+<meta name="description" content="Type romanized Nepali and see it transliterated to Devanagari, live, in your browser.">
+<link rel="stylesheet" href="style.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+<main>
+  <header>
+    <h1>RomanNepaliAI</h1>
+    <p>Type romanized Nepali below and see it transliterated to Devanagari live, entirely in your browser (no server, no data leaves your machine). This is the same engine used by the <code>--transliterate</code> flag in the CLI. English translation below is optional and calls a small backend.</p>
+  </header>
+
+  <section class="card">
+    <div class="mode-toggle" role="radiogroup" aria-label="Transliteration mode">
+      <input type="radio" name="mode" id="mode-casual" value="casual" checked>
+      <label for="mode-casual">Casual</label>
+      <input type="radio" name="mode" id="mode-formal" value="formal">
+      <label for="mode-formal">Formal</label>
+    </div>
+    <p class="mode-hint" id="mode-hint"></p>
+
+    <textarea id="input" placeholder="e.g. malai tha xaina" autofocus></textarea>
+
+    <div class="examples" id="examples"></div>
+
+    <div class="output-label">Devanagari</div>
+    <div class="output" id="output" lang="ne"></div>
+  </section>
+
+  <section class="card">
+    <div class="output-label" style="margin-top:0">Translation (optional, needs a backend)</div>
+    <p class="mode-hint" style="margin-bottom:0.8rem">
+      Calls a small server running the project's Google-Translate-backed <code>Translator</code>
+      &mdash; enter its URL once and it's remembered in this browser. Leave blank to skip.
+    </p>
+    <div class="api-row" style="margin-bottom:1.1rem">
+      <input type="text" id="api-url" placeholder="https://your-backend.example.com" spellcheck="false">
+    </div>
+
+    <div class="mode-toggle" role="radiogroup" aria-label="Translation direction">
+      <input type="radio" name="direction" id="dir-ne-en" value="ne-en" checked>
+      <label for="dir-ne-en">Nepali &rarr; English</label>
+      <input type="radio" name="direction" id="dir-en-ne" value="en-ne">
+      <label for="dir-en-ne">English &rarr; Nepali</label>
+    </div>
+
+    <p class="mode-hint" id="direction-hint" style="margin-bottom:0.8rem"></p>
+
+    <textarea id="en-input" placeholder="e.g. My name is Bishal" style="display:none"></textarea>
+
+    <div class="api-row">
+      <button type="button" id="translate-btn" style="width:100%">Translate</button>
+    </div>
+    <div class="output" id="translation-output" style="margin-top:0.9rem"></div>
+  </section>
+
+  <footer>
+    Transliteration is rule-based &amp; dictionary-assisted, not a language model &mdash; expect rough edges on words outside the built-in dictionary.
+    <br>
+    <a href="https://github.com/DBishal13/RomanNepaliAI">Source on GitHub</a>
+  </footer>
+</main>
+
+<script src="transliterate.js"></script>
+<script>
+  const input = document.getElementById("input");
+  const output = document.getElementById("output");
+  const modeHint = document.getElementById("mode-hint");
+  const examplesEl = document.getElementById("examples");
+  const modeInputs = document.querySelectorAll('input[name="mode"]');
+  const apiUrlInput = document.getElementById("api-url");
+  const translateBtn = document.getElementById("translate-btn");
+  const translationOutput = document.getElementById("translation-output");
+  const enInput = document.getElementById("en-input");
+  const directionHint = document.getElementById("direction-hint");
+  const directionInputs = document.querySelectorAll('input[name="direction"]');
+
+  const DIRECTION_HINTS = {
+    "ne-en": "Sends the Devanagari transliteration above to the backend.",
+    "en-ne": "Type English below; the backend translates it to Nepali (shown in Devanagari, with a romanized line underneath).",
+  };
+
+  const HINTS = {
+    casual: "Dictionary-assisted for free-typed texting-style Nepali (e.g. “malai tha xaina”). Case-insensitive; known English loanwords are left alone.",
+    formal: "Strict, deterministic ITRANS-style scheme. Case-sensitive (t vs T = dental vs retroflex); a consonant with no vowel after it becomes a dead consonant.",
+  };
+
+  const EXAMPLES = ["malai tha xaina", "ma ghar gaye", "Aaja office jana man lagdaina", "Kathmandu ko mausam ramro cha"];
+
+  function currentMode() {
+    return document.getElementById("mode-formal").checked ? "formal" : "casual";
+  }
+
+  function currentDevanagari() {
+    const text = input.value;
+    return text ? window.RomanNepaliAI.romanToDevanagari(text, currentMode() === "casual") : "";
+  }
+
+  function render() {
+    modeHint.textContent = HINTS[currentMode()];
+    output.textContent = currentDevanagari();
+  }
+
+  for (const el of modeInputs) el.addEventListener("change", render);
+  input.addEventListener("input", render);
+
+  for (const ex of EXAMPLES) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.textContent = ex;
+    btn.addEventListener("click", () => {
+      input.value = ex;
+      render();
+      input.focus();
+    });
+    examplesEl.appendChild(btn);
+  }
+
+  // --- translation backend (optional) ---
+  const API_URL_KEY = "romanNepaliAI.apiUrl";
+  const DEFAULT_API_URL = "https://romannepaliai.onrender.com";
+  apiUrlInput.value = localStorage.getItem(API_URL_KEY) || DEFAULT_API_URL;
+  apiUrlInput.addEventListener("change", () => {
+    localStorage.setItem(API_URL_KEY, apiUrlInput.value.trim());
+  });
+
+  function currentDirection() {
+    return document.getElementById("dir-en-ne").checked ? "en-ne" : "ne-en";
+  }
+
+  function currentTranslationInput() {
+    return currentDirection() === "en-ne" ? enInput.value.trim() : currentDevanagari();
+  }
+
+  function updateDirectionUI() {
+    const direction = currentDirection();
+    enInput.style.display = direction === "en-ne" ? "" : "none";
+    directionHint.textContent = DIRECTION_HINTS[direction];
+    translationOutput.textContent = "";
+  }
+
+  for (const el of directionInputs) el.addEventListener("change", updateDirectionUI);
+
+  async function translate() {
+    const apiUrl = apiUrlInput.value.trim().replace(/\/+$/, "");
+    const direction = currentDirection();
+    const text = currentTranslationInput();
+    if (!apiUrl) {
+      translationOutput.textContent = "Enter a backend URL above first.";
+      return;
+    }
+    if (!text) {
+      translationOutput.textContent = direction === "en-ne"
+        ? "Type some English text first."
+        : "Type something to transliterate first.";
+      return;
+    }
+    translationOutput.textContent = "Translating…";
+    translateBtn.disabled = true;
+    try {
+      const [src, tgt] = direction === "en-ne" ? ["en", "ne"] : ["ne", "en"];
+      const res = await fetch(`${apiUrl}/translate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text, backend: "google", src, tgt }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      translationOutput.textContent = "";
+      if (data.translation) {
+        const mainLine = document.createElement("div");
+        if (tgt === "ne") mainLine.lang = "ne";
+        mainLine.textContent = data.translation;
+        translationOutput.appendChild(mainLine);
+        if (direction === "en-ne") {
+          const romanLine = document.createElement("div");
+          romanLine.className = "mode-hint";
+          romanLine.style.marginTop = "0.4rem";
+          romanLine.textContent = window.RomanNepaliAI.devanagariToRoman(data.translation);
+          translationOutput.appendChild(romanLine);
+        }
+      } else {
+        translationOutput.textContent = "(empty response)";
+      }
+    } catch (err) {
+      translationOutput.textContent = `Couldn't reach the backend: ${err.message}`;
+    } finally {
+      translateBtn.disabled = false;
+    }
+  }
+
+  translateBtn.addEventListener("click", translate);
+
+  updateDirectionUI();
+  render();
+</script>
+</body>
+</html>
