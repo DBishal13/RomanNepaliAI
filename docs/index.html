@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RomanNepaliAI &mdash; Transliteration Demo</title>
+<meta name="description" content="Type romanized Nepali and see it transliterated to Devanagari, live, in your browser.">
+<link rel="stylesheet" href="style.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+<main>
+  <header>
+    <h1>RomanNepaliAI</h1>
+    <p>Type romanized Nepali below and see it transliterated to Devanagari live, entirely in your browser (no server, no data leaves your machine). This is the same engine used by the <code>--transliterate</code> flag in the CLI.</p>
+  </header>
+
+  <section class="card">
+    <div class="mode-toggle" role="radiogroup" aria-label="Transliteration mode">
+      <input type="radio" name="mode" id="mode-casual" value="casual" checked>
+      <label for="mode-casual">Casual</label>
+      <input type="radio" name="mode" id="mode-formal" value="formal">
+      <label for="mode-formal">Formal</label>
+    </div>
+    <p class="mode-hint" id="mode-hint"></p>
+
+    <textarea id="input" placeholder="e.g. malai tha xaina" autofocus></textarea>
+
+    <div class="examples" id="examples"></div>
+
+    <div class="output-label">Devanagari</div>
+    <div class="output" id="output" lang="ne"></div>
+  </section>
+
+  <footer>
+    Rule-based &amp; dictionary-assisted, not a language model &mdash; expect rough edges on words outside the built-in dictionary.
+    <br>
+    <a href="https://github.com/DBishal13/RomanNepaliAI">Source on GitHub</a>
+  </footer>
+</main>
+
+<script src="transliterate.js"></script>
+<script>
+  const input = document.getElementById("input");
+  const output = document.getElementById("output");
+  const modeHint = document.getElementById("mode-hint");
+  const examplesEl = document.getElementById("examples");
+  const modeInputs = document.querySelectorAll('input[name="mode"]');
+
+  const HINTS = {
+    casual: "Dictionary-assisted for free-typed texting-style Nepali (e.g. “malai tha xaina”). Case-insensitive; known English loanwords are left alone.",
+    formal: "Strict, deterministic ITRANS-style scheme. Case-sensitive (t vs T = dental vs retroflex); a consonant with no vowel after it becomes a dead consonant.",
+  };
+
+  const EXAMPLES = ["malai tha xaina", "ma ghar gaye", "Aaja office jana man lagdaina", "Kathmandu ko mausam ramro cha"];
+
+  function currentMode() {
+    return document.getElementById("mode-formal").checked ? "formal" : "casual";
+  }
+
+  function render() {
+    const mode = currentMode();
+    modeHint.textContent = HINTS[mode];
+    const text = input.value;
+    output.textContent = text
+      ? window.RomanNepaliAI.romanToDevanagari(text, mode === "casual")
+      : "";
+  }
+
+  for (const el of modeInputs) el.addEventListener("change", render);
+  input.addEventListener("input", render);
+
+  for (const ex of EXAMPLES) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.textContent = ex;
+    btn.addEventListener("click", () => {
+      input.value = ex;
+      render();
+      input.focus();
+    });
+    examplesEl.appendChild(btn);
+  }
+
+  render();
+</script>
+</body>
+</html>
