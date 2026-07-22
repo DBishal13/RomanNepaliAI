@@ -3,20 +3,54 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark light">
+<script>
+  if(localStorage.getItem('theme') === 'light'){
+    document.documentElement.setAttribute('data-theme', 'light');
+  }
+</script>
 <title>RomanNepaliAI &mdash; Transliteration Demo</title>
 <meta name="description" content="Type romanized Nepali and see it transliterated to Devanagari, live, in your browser.">
-<link rel="stylesheet" href="style.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+Devanagari:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
-<main>
-  <header>
-    <h1>RomanNepaliAI</h1>
-    <p>Type romanized Nepali below and see it transliterated to Devanagari live, entirely in your browser (no server, no data leaves your machine). This is the same engine used by the <code>--transliterate</code> flag in the CLI. English translation below is optional and calls a small backend. Mic (🎤) and speaker (🔊) buttons use your browser's built-in speech support when available &mdash; support and Nepali voice quality vary by browser/device.</p>
-  </header>
 
+<nav>
+  <div class="wrap nav-inner">
+    <a class="wordmark" href="#top">Roman<span>Nepali</span>AI</a>
+    <div class="nav-right">
+      <a class="back-link mono" href="https://dbishal13.github.io" target="_blank">&larr; Bishal Dhungana</a>
+      <button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle light and dark mode">
+        <span class="theme-toggle__icon theme-toggle__sun" title="Light mode">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="17" height="17">
+            <path d="M12 2L13.16 7.65L17 3.34L15.18 8.82L20.66 7L16.35 10.84L22 12L16.35 13.16L20.66 17L15.18 15.18L17 20.66L13.16 16.35L12 22L10.84 16.35L7 20.66L8.82 15.18L3.34 17L7.65 13.16L2 12L7.65 10.84L3.34 7L8.82 8.82L7 3.34L10.84 7.65Z"></path>
+          </svg>
+        </span>
+        <span class="theme-toggle__icon theme-toggle__moon" title="Dark mode">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="15" height="15">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"></path>
+          </svg>
+        </span>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<header class="hero" id="top">
+  <div class="bg-glow" aria-hidden="true"></div>
+  <div class="bg-devanagari" aria-hidden="true">&#2344;&#2375;&#2346;&#2366;&#2354;</div>
+  <div class="wrap">
+    <div class="eyebrow mono">Nepali &rarr; Devanagari &rarr; English</div>
+    <h1>RomanNepaliAI</h1>
+    <p class="lede">Type romanized Nepali below and see it transliterated to Devanagari live, entirely in your browser (no server, no data leaves your machine). This is the same engine used by the <code>--transliterate</code> flag in the CLI. English translation below is optional and calls a small backend. Mic (&#127908;) and speaker (&#128266;) buttons use your browser's built-in speech support when available &mdash; support and Nepali voice quality vary by browser/device.</p>
+    <a class="byline mono" href="https://dbishal13.github.io" target="_blank">A project by Bishal Dhungana &#8599;</a>
+  </div>
+</header>
+
+<main class="wrap">
   <section class="card">
     <div class="mode-toggle" role="radiogroup" aria-label="Transliteration mode">
       <input type="radio" name="mode" id="mode-casual" value="casual" checked>
@@ -28,21 +62,21 @@
 
     <div class="field-wrap">
       <textarea id="input" placeholder="e.g. malai tha xaina" autofocus></textarea>
-      <button type="button" class="icon-btn" id="mic-input" title="Speak (Nepali)" aria-label="Speak Nepali" hidden>🎤</button>
+      <button type="button" class="icon-btn" id="mic-input" title="Speak (Nepali)" aria-label="Speak Nepali" hidden>&#127908;</button>
     </div>
     <p class="mode-hint" id="mic-status" style="display:none;margin:0.4rem 0 0"></p>
 
     <div class="examples" id="examples"></div>
 
     <div class="output-label-row">
-      <div class="output-label">Devanagari</div>
-      <button type="button" class="icon-btn" id="speak-output" title="Listen" aria-label="Listen to Devanagari output" hidden>🔊</button>
+      <div class="output-label mono">Devanagari</div>
+      <button type="button" class="icon-btn" id="speak-output" title="Listen" aria-label="Listen to Devanagari output" hidden>&#128266;</button>
     </div>
     <div class="output" id="output" lang="ne"></div>
   </section>
 
   <section class="card">
-    <div class="output-label" style="margin-top:0">Translation (optional, needs a backend)</div>
+    <div class="output-label mono" style="margin-top:0">Translation (optional, needs a backend)</div>
     <p class="mode-hint" style="margin-bottom:0.8rem">
       Calls a small server running the project's Google-Translate-backed <code>Translator</code>
       &mdash; enter its URL once and it's remembered in this browser. Leave blank to skip.
@@ -62,7 +96,7 @@
 
     <div class="field-wrap" id="en-input-wrap" style="display:none">
       <textarea id="en-input" placeholder="e.g. My name is Bishal"></textarea>
-      <button type="button" class="icon-btn" id="mic-en-input" title="Speak (English)" aria-label="Speak English" hidden>🎤</button>
+      <button type="button" class="icon-btn" id="mic-en-input" title="Speak (English)" aria-label="Speak English" hidden>&#127908;</button>
     </div>
     <p class="mode-hint" id="mic-en-status" style="display:none;margin:0.4rem 0 0.8rem"></p>
 
@@ -71,18 +105,28 @@
     </div>
 
     <div class="output-label-row" style="margin-top:1.25rem">
-      <div class="output-label" style="margin:0">Result</div>
-      <button type="button" class="icon-btn" id="speak-translation" title="Listen" aria-label="Listen to translation" hidden>🔊</button>
+      <div class="output-label mono" style="margin:0">Result</div>
+      <button type="button" class="icon-btn" id="speak-translation" title="Listen" aria-label="Listen to translation" hidden>&#128266;</button>
     </div>
     <div class="output" id="translation-output"></div>
   </section>
-
-  <footer>
-    Transliteration is rule-based &amp; dictionary-assisted, not a language model &mdash; expect rough edges on words outside the built-in dictionary.
-    <br>
-    <a href="https://github.com/DBishal13/RomanNepaliAI">Source on GitHub</a>
-  </footer>
 </main>
+
+<section class="explore">
+  <div class="wrap explore-inner">
+    <div class="sec-tag mono">Bishal Dhungana</div>
+    <h2>Explore more of my projects</h2>
+    <p>Agentic AI systems, geospatial data platforms, and other self-directed builds &mdash; all documented on my portfolio.</p>
+    <a class="btn btn-primary" href="https://dbishal13.github.io" target="_blank">Visit my portfolio &#8599;</a>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p>Transliteration is rule-based &amp; dictionary-assisted, not a language model &mdash; expect rough edges on words outside the built-in dictionary.</p>
+    <p><a href="https://github.com/DBishal13/RomanNepaliAI" target="_blank">Source on GitHub &#8599;</a></p>
+  </div>
+</footer>
 
 <script src="transliterate.js"></script>
 <script>
@@ -317,6 +361,21 @@
 
   updateDirectionUI();
   render();
+
+  /* ---------- Theme toggle ---------- */
+  var themeToggle = document.getElementById('themeToggle');
+  if (themeToggle) {
+    themeToggle.addEventListener('click', function () {
+      var isLight = document.documentElement.getAttribute('data-theme') === 'light';
+      if (isLight) {
+        document.documentElement.removeAttribute('data-theme');
+        localStorage.setItem('theme', 'dark');
+      } else {
+        document.documentElement.setAttribute('data-theme', 'light');
+        localStorage.setItem('theme', 'light');
+      }
+    });
+  }
 </script>
 </body>
 </html>
