@@ -78,3 +78,19 @@ def test_casual_mode_unknown_word_no_forced_trailing_virama():
 
 def test_formal_mode_default_unaffected_by_casual_mode():
     assert roman_to_devanagari("ghar") == "घर्"
+
+
+def test_casual_mode_fallback_prefers_dental_over_retroflex():
+    # Regression: the case-insensitive fallback used to resolve lowercase
+    # t/d/n/th/dh to their retroflex (capitalized) forms instead of dental,
+    # because T/D/N/Th/Dh were declared first in the consonant table and
+    # first-occurrence-wins deduping picked them. Dental is the overwhelmingly
+    # common case in casual romanized Nepali, so it must win.
+    assert roman_to_devanagari("nam", casual=True) == "नम"
+    assert roman_to_devanagari("dam", casual=True) == "दम"
+    assert roman_to_devanagari("that", casual=True) == "थत"
+    assert roman_to_devanagari("dhan", casual=True) == "धन"
+
+
+def test_casual_mode_common_word_naam():
+    assert roman_to_devanagari("mero naam Bishaal ho", casual=True) == "मेरो नाम बिशाल हो"

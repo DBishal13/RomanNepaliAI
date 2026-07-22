@@ -69,6 +69,7 @@
     pani: "पनि", paani: "पानी", ali: "अलि", dherai: "धेरै",
     ghumna: "घुम्न", sathi: "साथी", vayo: "भयो", bhayo: "भयो",
     sanchai: "सन्चै", dhanyabad: "धन्यवाद", maaf: "माफ",
+    naam: "नाम", mero: "मेरो", ho: "हो", timro: "तिम्रो", hamro: "हाम्रो",
   };
 
   const ENGLISH_LOANWORDS = new Set([
@@ -103,9 +104,18 @@
   const TOKENS = buildTokens();
 
   function buildTokensCI() {
+    // Prefer already-lowercase tokens over ones that needed lowercasing, so
+    // e.g. dental "t"/"d"/"n" win over retroflex "T"/"D"/"N" when both
+    // collapse to the same lowercase key -- dental is the overwhelmingly
+    // common case in casual romanized Nepali.
+    const ordered = [...TOKENS].sort((a, b) => {
+      const aLower = a.roman === a.roman.toLowerCase() ? 0 : 1;
+      const bLower = b.roman === b.roman.toLowerCase() ? 0 : 1;
+      return aLower - bLower;
+    });
     const seen = new Set();
     const out = [];
-    for (const t of TOKENS) {
+    for (const t of ordered) {
       const lroman = t.roman.toLowerCase();
       if (!seen.has(lroman)) {
         seen.add(lroman);
