@@ -28,8 +28,8 @@ Subtitle pipeline usage example:
 - Translate an SRT file (stub backend):
   python -m roman_nepali_ai.cli --srt-in examples/imported_romanized_nepali/sample.srt --srt-out out.srt
 
-- Translate with Google Translate (requires googletrans):
-  pip install googletrans==4.0.0rc1
+- Translate with Google Translate (requires deep-translator):
+  pip install deep-translator
   python -m roman_nepali_ai.cli --srt-in examples/imported_romanized_nepali/sample.srt --srt-out out.srt --backend google
 
 - Translate with Hugging Face model (optional):

@@ -7,7 +7,7 @@ Functions:
 
 Supports three backends:
 - 'stub' : returns input unchanged
-- 'google' : uses googletrans (if installed)
+- 'google' : uses deep-translator's GoogleTranslator (if installed)
 - 'hf' : uses the Translator class (Hugging Face Marian) from translate.py
 
 Also provides simple subtitle normalization (line wrapping and optional merging)
@@ -79,15 +79,14 @@ def write_srt(captions: List[Dict], path: str) -> None:
 
 def _translate_texts_google(texts: List[str]) -> List[str]:
     try:
-        from googletrans import Translator as GT
-    except Exception as e:
-        raise RuntimeError("googletrans is not available. Install with: pip install googletrans==4.0.0rc1")
-    t = GT()
+        from deep_translator import GoogleTranslator
+    except Exception:
+        raise RuntimeError("deep-translator is not available. Install with: pip install deep-translator")
+    t = GoogleTranslator(source='ne', target='en')
     out = []
     for txt in texts:
         try:
-            res = t.translate(txt, src='ne', dest='en')
-            out.append(res.text)
+            out.append(t.translate(txt))
         except Exception:
             out.append(txt)
     return out
