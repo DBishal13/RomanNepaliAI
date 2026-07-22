@@ -2,12 +2,12 @@
 
 Provides a Translator wrapper that supports a stub backend, an optional
 Hugging Face MarianMT backend (Helsinki-NLP/opus-mt-ne-en), and a lightweight
-Google Translate adapter (via googletrans) when available.
+Google Translate adapter (via deep-translator) when available.
 
 Backends:
 - stub: returns input unchanged
 - hf: uses transformers MarianMT
-- google: uses googletrans Translator (install: pip install googletrans==4.0.0rc1)
+- google: uses deep-translator's GoogleTranslator (install: pip install deep-translator)
 """
 from typing import Optional
 
@@ -32,8 +32,8 @@ class Translator:
 
         elif self.backend == "google":
             try:
-                from googletrans import Translator as GT
-                self.gt = GT()
+                from deep_translator import GoogleTranslator
+                self._google_translator_cls = GoogleTranslator
                 self.available = True
             except Exception as e:
                 self.available = False
@@ -51,14 +51,12 @@ class Translator:
         if self.backend == "google":
             if not self.available:
                 raise RuntimeError(
-                    "Google Translate backend unavailable. Install googletrans (pip install googletrans==4.0.0rc1) "
+                    "Google Translate backend unavailable. Install deep-translator (pip install deep-translator) "
                     f"or use the stub backend. Original error: {self._load_error}"
                 )
             try:
-                res = self.gt.translate(text, src=src, dest=tgt)
-                return res.text
+                return self._google_translator_cls(source=src, target=tgt).translate(text)
             except Exception as e:
-                # On any error, surface the original text to avoid crashes
                 raise RuntimeError(f"Google Translate failed: {e}")
 
         if self.backend == "hf":
