@@ -27,7 +27,11 @@ app.add_middleware(
 )
 
 # Translator instances are reused across requests per backend (model/client
-# setup can be slow, e.g. loading an HF model).
+# setup can be slow, e.g. loading an HF model). Keyed by backend only, not by
+# (backend, src, tgt): the google backend builds a fresh direction-specific
+# client per translate() call already (see Translator.translate), and hf only
+# ever supports one direction (enforced in Translator.translate), so there's
+# never more than one valid cached instance per backend.
 _translators: dict = {}
 
 
@@ -40,6 +44,8 @@ def _get_translator(backend: str) -> Translator:
 class TranslateRequest(BaseModel):
     text: str
     backend: str = "google"
+    src: str = "ne"
+    tgt: str = "en"
 
 
 class TranslateResponse(BaseModel):
@@ -58,7 +64,7 @@ def translate(req: TranslateRequest):
         return TranslateResponse(translation="")
     try:
         translator = _get_translator(req.backend)
-        out = translator.translate(req.text)
+        out = translator.translate(req.text, src=req.src, tgt=req.tgt)
     except Exception as e:
         return TranslateResponse(translation=f"Translation failed: {e}", error=True)
     return TranslateResponse(translation=out)

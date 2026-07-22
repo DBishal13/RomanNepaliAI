@@ -35,15 +35,28 @@
   </section>
 
   <section class="card">
-    <div class="output-label" style="margin-top:0">English translation (optional, needs a backend)</div>
+    <div class="output-label" style="margin-top:0">Translation (optional, needs a backend)</div>
     <p class="mode-hint" style="margin-bottom:0.8rem">
-      Transliteration above runs locally. Real translation calls a small server running the
-      project's Google-Translate-backed <code>Translator</code> &mdash; enter its URL once and it's
-      remembered in this browser. Leave blank to skip.
+      Calls a small server running the project's Google-Translate-backed <code>Translator</code>
+      &mdash; enter its URL once and it's remembered in this browser. Leave blank to skip.
     </p>
-    <div class="api-row">
+    <div class="api-row" style="margin-bottom:1.1rem">
       <input type="text" id="api-url" placeholder="https://your-backend.example.com" spellcheck="false">
-      <button type="button" id="translate-btn">Translate</button>
+    </div>
+
+    <div class="mode-toggle" role="radiogroup" aria-label="Translation direction">
+      <input type="radio" name="direction" id="dir-ne-en" value="ne-en" checked>
+      <label for="dir-ne-en">Nepali &rarr; English</label>
+      <input type="radio" name="direction" id="dir-en-ne" value="en-ne">
+      <label for="dir-en-ne">English &rarr; Nepali</label>
+    </div>
+
+    <p class="mode-hint" id="direction-hint" style="margin-bottom:0.8rem"></p>
+
+    <textarea id="en-input" placeholder="e.g. My name is Bishal" style="display:none"></textarea>
+
+    <div class="api-row">
+      <button type="button" id="translate-btn" style="width:100%">Translate</button>
     </div>
     <div class="output" id="translation-output" style="margin-top:0.9rem"></div>
   </section>
@@ -65,6 +78,14 @@
   const apiUrlInput = document.getElementById("api-url");
   const translateBtn = document.getElementById("translate-btn");
   const translationOutput = document.getElementById("translation-output");
+  const enInput = document.getElementById("en-input");
+  const directionHint = document.getElementById("direction-hint");
+  const directionInputs = document.querySelectorAll('input[name="direction"]');
+
+  const DIRECTION_HINTS = {
+    "ne-en": "Sends the Devanagari transliteration above to the backend.",
+    "en-ne": "Type English below; the backend translates it to Nepali (shown in Devanagari, with a romanized line underneath).",
+  };
 
   const HINTS = {
     casual: "Dictionary-assisted for free-typed texting-style Nepali (e.g. “malai tha xaina”). Case-insensitive; known English loanwords are left alone.",
@@ -110,28 +131,64 @@
     localStorage.setItem(API_URL_KEY, apiUrlInput.value.trim());
   });
 
+  function currentDirection() {
+    return document.getElementById("dir-en-ne").checked ? "en-ne" : "ne-en";
+  }
+
+  function currentTranslationInput() {
+    return currentDirection() === "en-ne" ? enInput.value.trim() : currentDevanagari();
+  }
+
+  function updateDirectionUI() {
+    const direction = currentDirection();
+    enInput.style.display = direction === "en-ne" ? "" : "none";
+    directionHint.textContent = DIRECTION_HINTS[direction];
+    translationOutput.textContent = "";
+  }
+
+  for (const el of directionInputs) el.addEventListener("change", updateDirectionUI);
+
   async function translate() {
     const apiUrl = apiUrlInput.value.trim().replace(/\/+$/, "");
-    const deva = currentDevanagari();
+    const direction = currentDirection();
+    const text = currentTranslationInput();
     if (!apiUrl) {
       translationOutput.textContent = "Enter a backend URL above first.";
       return;
     }
-    if (!deva) {
-      translationOutput.textContent = "Type something to transliterate first.";
+    if (!text) {
+      translationOutput.textContent = direction === "en-ne"
+        ? "Type some English text first."
+        : "Type something to transliterate first.";
       return;
     }
     translationOutput.textContent = "Translating…";
     translateBtn.disabled = true;
     try {
+      const [src, tgt] = direction === "en-ne" ? ["en", "ne"] : ["ne", "en"];
       const res = await fetch(`${apiUrl}/translate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: deva, backend: "google" }),
+        body: JSON.stringify({ text, backend: "google", src, tgt }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      translationOutput.textContent = data.translation || "(empty response)";
+      translationOutput.textContent = "";
+      if (data.translation) {
+        const mainLine = document.createElement("div");
+        if (tgt === "ne") mainLine.lang = "ne";
+        mainLine.textContent = data.translation;
+        translationOutput.appendChild(mainLine);
+        if (direction === "en-ne") {
+          const romanLine = document.createElement("div");
+          romanLine.className = "mode-hint";
+          romanLine.style.marginTop = "0.4rem";
+          romanLine.textContent = window.RomanNepaliAI.devanagariToRoman(data.translation);
+          translationOutput.appendChild(romanLine);
+        }
+      } else {
+        translationOutput.textContent = "(empty response)";
+      }
     } catch (err) {
       translationOutput.textContent = `Couldn't reach the backend: ${err.message}`;
     } finally {
@@ -141,6 +198,7 @@
 
   translateBtn.addEventListener("click", translate);
 
+  updateDirectionUI();
   render();
 </script>
 </body>
