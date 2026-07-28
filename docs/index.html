@@ -42,6 +42,12 @@
 <header class="hero" id="top">
   <div class="bg-glow" aria-hidden="true"></div>
   <div class="bg-devanagari" aria-hidden="true">&#2344;&#2375;&#2346;&#2366;&#2354;</div>
+  <div class="bg-mountains" aria-hidden="true">
+    <svg viewBox="0 0 1440 320" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+      <path class="bg-mountains__range" d="M0,320 L0,230 L100,170 L180,210 L280,140 L360,195 L440,120 L500,150 L560,80 L620,45 L680,90 L730,60 L800,130 L880,90 L970,160 L1060,100 L1150,165 L1250,125 L1350,180 L1440,150 L1440,320 Z" />
+      <path class="bg-mountains__glow" d="M590,95 L620,45 L650,90 L620,80 Z" />
+    </svg>
+  </div>
   <div class="wrap">
     <div class="eyebrow mono">Nepali &rarr; Devanagari &rarr; English</div>
     <h1>RomanNepaliAI</h1>
@@ -51,7 +57,8 @@
 </header>
 
 <main class="wrap">
-  <section class="card">
+  <div class="cards-grid">
+  <section class="card card--roman" data-watermark="&#2309;">
     <div class="mode-toggle" role="radiogroup" aria-label="Transliteration mode">
       <input type="radio" name="mode" id="mode-casual" value="casual" checked>
       <label for="mode-casual">Casual</label>
@@ -76,7 +83,9 @@
     <p class="mode-hint" id="tts-status" style="display:none;margin:0.4rem 0 0"></p>
   </section>
 
-  <section class="card">
+  <div class="flow-arrow" aria-hidden="true">&rarr;</div>
+
+  <section class="card card--translate" data-watermark="EN">
     <div class="output-label mono" style="margin-top:0">Translation (optional, needs a backend)</div>
     <p class="mode-hint" style="margin-bottom:0.8rem">
       Calls a small server running the project's Google-Translate-backed <code>Translator</code>
@@ -112,6 +121,7 @@
     <div class="output" id="translation-output"></div>
     <p class="mode-hint" id="tts-translation-status" style="display:none;margin:0.4rem 0 0"></p>
   </section>
+  </div>
 </main>
 
 <section class="explore">
