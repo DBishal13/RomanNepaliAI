@@ -2,6 +2,10 @@
 
 Tools for working with Nepali text in three directions: **transliteration** (romanized Nepali &harr; Devanagari script, same language) and **translation** (Nepali &harr; English, different languages). Built for subtitles, texting-style Nepali, and general text, with a CLI, a web demo, and a small backend API.
 
+![RomanNepaliAI web demo preview](assets/preview.png)
+
+Live at [dbishal13.github.io/RomanNepaliAI](https://dbishal13.github.io/RomanNepaliAI/).
+
 ## What's here
 
 - **Transliteration** &mdash; deterministic, rule-based romanized-Nepali &rarr; Devanagari conversion, plus the reverse. Two modes:
