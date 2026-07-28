@@ -123,6 +123,8 @@ src/roman_nepali_ai/
 docs/                        # static web demo (transliteration.js is a JS port of transliterate.py)
 tests/                         # pytest suite, one file per module above
 examples/imported_romanized_nepali/   # exploratory notes from early experimentation (not part of the package)
+tools/scraper/                          # exploratory Nepal social-media scraper, not wired into the package -- see its own README
+scraped_data/                             # output of tools/scraper (gitignored; may contain synthetic example data, see tools/scraper/README.md)
 ```
 
 ## Honest limitations
