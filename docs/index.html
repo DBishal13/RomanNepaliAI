@@ -73,6 +73,7 @@
       <button type="button" class="icon-btn" id="speak-output" title="Listen" aria-label="Listen to Devanagari output" hidden>&#128266;</button>
     </div>
     <div class="output" id="output" lang="ne"></div>
+    <p class="mode-hint" id="tts-status" style="display:none;margin:0.4rem 0 0"></p>
   </section>
 
   <section class="card">
@@ -109,6 +110,7 @@
       <button type="button" class="icon-btn" id="speak-translation" title="Listen" aria-label="Listen to translation" hidden>&#128266;</button>
     </div>
     <div class="output" id="translation-output"></div>
+    <p class="mode-hint" id="tts-translation-status" style="display:none;margin:0.4rem 0 0"></p>
   </section>
 </main>
 
@@ -290,7 +292,7 @@
   let lastTranslationText = "";
   let lastTranslationLang = "en-US";
 
-  function wireMic(button, targetTextarea, lang, statusEl, onFilled) {
+  function wireMic(button, targetTextarea, lang, statusEl, transformResult, onFilled) {
     if (!supportsSTT) return;
     button.hidden = false;
     let recognition = null;
@@ -326,7 +328,8 @@
         button.classList.remove("recording");
       };
       recognition.onresult = (event) => {
-        targetTextarea.value = event.results[0][0].transcript;
+        const transcript = event.results[0][0].transcript;
+        targetTextarea.value = transformResult ? transformResult(transcript) : transcript;
         targetTextarea.dispatchEvent(new Event("input"));
         if (onFilled) onFilled();
       };
@@ -339,24 +342,69 @@
     });
   }
 
-  function speak(text, lang) {
+  const TTS_ERROR_MESSAGES = {
+    "language-unavailable": "No voice installed for this language on your system/browser.",
+    "voice-unavailable": "No voice installed for this language on your system/browser.",
+    "synthesis-unavailable": "Text-to-speech isn't available in this browser.",
+    "synthesis-failed": "Text-to-speech failed to play.",
+    "audio-busy": "Audio device is busy — try again.",
+    "audio-hardware": "No audio output device found.",
+    "not-allowed": "Playback was blocked by the browser.",
+  };
+
+  // Chrome can silently stop (or never start) speech if the utterance has no
+  // surviving reference -- it gets garbage-collected mid-speak. Keeping one
+  // in an outer-scope variable works around that.
+  let currentUtterance = null;
+
+  // The Web Speech API doesn't expose voice gender as a field, so this is a
+  // name-based heuristic covering common Windows/Chrome/macOS voice names.
+  const FEMALE_VOICE_HINTS = [
+    "female", "zira", "hazel", "susan", "aria", "jenny", "samantha", "victoria",
+    "karen", "moira", "tessa", "veena", "fiona", "kate", "salli", "joanna", "ivy",
+    "kimberly", "amy", "emma", "olivia", "sonia", "libby", "sarah", "natasha",
+    "catherine", "linda", "michelle", "allison", "ava", "abbi", "hemkala", "heera",
+  ];
+
+  function pickVoice(voices, lang) {
+    const exactMatches = voices.filter((v) => v.lang === lang);
+    const matches = exactMatches.length ? exactMatches : voices.filter((v) => v.lang.startsWith(lang.split("-")[0]));
+    if (!matches.length) return null;
+    const female = matches.find((v) => FEMALE_VOICE_HINTS.some((hint) => v.name.toLowerCase().includes(hint)));
+    return female || matches[0];
+  }
+
+  function speak(text, lang, statusEl) {
+    if (statusEl) { statusEl.textContent = ""; statusEl.style.display = "none"; }
     if (!supportsTTS || !text) return;
     window.speechSynthesis.cancel();
     const utter = new SpeechSynthesisUtterance(text);
     utter.lang = lang;
+    const match = pickVoice(window.speechSynthesis.getVoices(), lang);
+    if (match) utter.voice = match;
+    utter.onerror = (event) => {
+      if (!statusEl) return;
+      statusEl.textContent = TTS_ERROR_MESSAGES[event.error] || `Couldn't play audio: ${event.error}`;
+      statusEl.style.display = "";
+    };
+    currentUtterance = utter;
     window.speechSynthesis.speak(utter);
   }
 
-  // Speaking Nepali fills in Devanagari directly (the browser transcribes
-  // actual Nepali script, not a romanization) -- it flows into the same
-  // render() path as typed text and displays as-is either way.
-  wireMic(micInputBtn, input, "ne-NP", micStatus);
+  // Nepali speech recognition ("ne-NP") transcribes straight to Devanagari
+  // script, not romanized text -- but this box is for romanized input, so
+  // convert back to roman before filling it in (romanToDevanagari then
+  // reconstructs the Devanagari output from that, same as typed input).
+  wireMic(micInputBtn, input, "ne-NP", micStatus, (transcript) => window.RomanNepaliAI.devanagariToRoman(transcript));
   wireMic(micEnInputBtn, enInput, "en-US", micEnStatus);
+
+  const ttsStatus = document.getElementById("tts-status");
+  const ttsTranslationStatus = document.getElementById("tts-translation-status");
 
   if (supportsTTS) {
     speakOutputBtn.hidden = false;
-    speakOutputBtn.addEventListener("click", () => speak(output.textContent, "ne-NP"));
-    speakTranslationBtn.addEventListener("click", () => speak(lastTranslationText, lastTranslationLang));
+    speakOutputBtn.addEventListener("click", () => speak(output.textContent, "ne-NP", ttsStatus));
+    speakTranslationBtn.addEventListener("click", () => speak(lastTranslationText, lastTranslationLang, ttsTranslationStatus));
   }
 
   updateDirectionUI();
