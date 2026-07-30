@@ -89,9 +89,9 @@ cd docs && python3 -m http.server 8000
 
 - Transliteration (top card) runs entirely client-side &mdash; no backend needed.
 - Translation (bottom card) needs a reachable backend URL (see below); enter it once and it's remembered in your browser (`localStorage`).
-- Voice buttons (🎤/🔊) appear automatically where your browser supports the Web Speech API; they're simply hidden otherwise (e.g. Firefox lacks `SpeechRecognition`). Nepali voice quality/availability for text-to-speech varies by OS and browser.
+- Voice buttons (🎤/🔊) appear automatically where your browser supports the Web Speech API; they're simply hidden otherwise (e.g. Firefox lacks `SpeechRecognition`, and so does every browser on iOS &mdash; Safari/Chrome/Firefox there all share WebKit, which defines the API but never actually implements it, so it's treated as unsupported rather than shown broken). Nepali voice quality/availability for text-to-speech varies by OS and browser.
 
-Not yet published via GitHub Pages as of this writing &mdash; run it locally as above, or see [`render.yaml`](render.yaml) / the backend section below for deploying the pieces yourself.
+Published via GitHub Pages at [dbishal13.github.io/RomanNepaliAI](https://dbishal13.github.io/RomanNepaliAI/) &mdash; or run it locally as above. See [`render.yaml`](render.yaml) / the backend section below for deploying the pieces yourself.
 
 ## Backend API
 

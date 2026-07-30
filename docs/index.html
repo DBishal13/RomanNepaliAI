@@ -296,8 +296,16 @@
   translateBtn.addEventListener("click", translate);
 
   // --- voice (Web Speech API, entirely client-side; support varies by browser) ---
+  // iOS WebKit defines webkitSpeechRecognition (so feature-detection alone says
+  // "supported"), but it's a non-functional stub there -- starting it reliably
+  // fails with a "service-not-allowed" error rather than doing anything. Since
+  // every iOS browser (Chrome, Firefox, etc. included) is a WebKit wrapper,
+  // there's no browser switch that fixes it -- treat STT as unsupported on iOS
+  // so the mic button is just hidden, same as on browsers lacking the API.
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
   const SpeechRecognitionCtor = window.SpeechRecognition || window.webkitSpeechRecognition;
-  const supportsSTT = !!SpeechRecognitionCtor;
+  const supportsSTT = !!SpeechRecognitionCtor && !isIOS;
   const supportsTTS = "speechSynthesis" in window;
   let lastTranslationText = "";
   let lastTranslationLang = "en-US";
