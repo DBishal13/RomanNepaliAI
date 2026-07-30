@@ -236,6 +236,12 @@
     directionHint.textContent = DIRECTION_HINTS[direction];
     translationOutput.textContent = "";
     speakTranslationBtn.hidden = true;
+    if (showEn && isIOS) {
+      showDictationHint(micEnStatus);
+    } else if (micEnStatus) {
+      micEnStatus.textContent = "";
+      micEnStatus.style.display = "none";
+    }
   }
 
   for (const el of directionInputs) el.addEventListener("change", updateDirectionUI);
@@ -360,6 +366,16 @@
     });
   }
 
+  // No in-page mic works on iOS (see isIOS above) -- but the system keyboard
+  // has its own dictation mic that types straight into any focused text
+  // field, independent of the Web Speech API. Point people at it instead of
+  // just leaving them with a missing button and no explanation.
+  function showDictationHint(statusEl) {
+    if (!statusEl) return;
+    statusEl.textContent = "No in-page mic on iOS (Apple doesn't support it in any browser here) -- tap the 🎤 on your keyboard instead to dictate into this box.";
+    statusEl.style.display = "";
+  }
+
   const TTS_ERROR_MESSAGES = {
     "language-unavailable": "No voice installed for this language on your system/browser.",
     "voice-unavailable": "No voice installed for this language on your system/browser.",
@@ -395,18 +411,31 @@
   function speak(text, lang, statusEl) {
     if (statusEl) { statusEl.textContent = ""; statusEl.style.display = "none"; }
     if (!supportsTTS || !text) return;
-    window.speechSynthesis.cancel();
+
+    const synth = window.speechSynthesis;
+    // iOS Safari-specific bugs: calling cancel() while nothing is actually
+    // speaking can leave the engine stuck, and the queue can get stuck
+    // "paused" after use -- only cancel what's actually pending, and
+    // force-resume first to clear any leftover stuck-paused state.
+    if (synth.speaking || synth.pending) synth.cancel();
+    synth.resume();
+
     const utter = new SpeechSynthesisUtterance(text);
     utter.lang = lang;
-    const match = pickVoice(window.speechSynthesis.getVoices(), lang);
-    if (match) utter.voice = match;
+    const match = pickVoice(synth.getVoices(), lang);
+    if (match) {
+      utter.voice = match;
+    } else if (statusEl) {
+      statusEl.textContent = `No installed voice matches "${lang}" -- trying the device default instead.`;
+      statusEl.style.display = "";
+    }
     utter.onerror = (event) => {
       if (!statusEl) return;
       statusEl.textContent = TTS_ERROR_MESSAGES[event.error] || `Couldn't play audio: ${event.error}`;
       statusEl.style.display = "";
     };
     currentUtterance = utter;
-    window.speechSynthesis.speak(utter);
+    synth.speak(utter);
   }
 
   // Nepali speech recognition ("ne-NP") transcribes straight to Devanagari
@@ -415,6 +444,7 @@
   // reconstructs the Devanagari output from that, same as typed input).
   wireMic(micInputBtn, input, "ne-NP", micStatus, (transcript) => window.RomanNepaliAI.devanagariToRoman(transcript));
   wireMic(micEnInputBtn, enInput, "en-US", micEnStatus);
+  if (isIOS) showDictationHint(micStatus);
 
   const ttsStatus = document.getElementById("tts-status");
   const ttsTranslationStatus = document.getElementById("tts-translation-status");
